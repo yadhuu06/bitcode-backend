@@ -5,6 +5,7 @@ from math import pow
 from authentication.models import CustomUser
 from room.models import Room
 def calculate_elo_1v1(room_id, winner_id):
+    print("call came to 1vs 1")
      
 
     room = Room.objects.get(room_id=room_id)
@@ -13,11 +14,10 @@ def calculate_elo_1v1(room_id, winner_id):
     if len(participants) != 2:
         raise ValueError("1v1 room must have exactly 2 participants.")
 
-    # Get winner and loser as real user objects
+
     winner = CustomUser.objects.get(user_id=winner_id)
     loser = [p for p in participants if p.user.user_id != winner_id][0].user
 
-    # Get current season
     season = Season.objects.filter(is_active=True).first()
     if not season:
         raise ValueError("No active season found.")
@@ -28,15 +28,19 @@ def calculate_elo_1v1(room_id, winner_id):
     K = 32
     expected_winner = 1 / (1 + pow(10, (loser_rank.rating - winner_rank.rating) / 400))
     expected_loser = 1 / (1 + pow(10, (winner_rank.rating - loser_rank.rating) / 400))
+    print("winner",expected_winner)
+    print("loser",loser)
 
     with transaction.atomic():
         winner_rank.rating += K * (1 - expected_winner)
         loser_rank.rating += K * (0 - expected_loser)
         winner_rank.wins += 1
         loser_rank.losses += 1
-        winner_rank.total_match += 1
-        loser_rank.total_match += 1
+        winner_rank.total_matches += 1
+        loser_rank.total_matches += 1
         winner_rank.save()
+        print("winner rank saved ")
+        
         loser_rank.save()
 
 
@@ -49,15 +53,15 @@ def calculate_elo_squad(battle):
         battle: A Battle instance containing multiple participants (3 to 5 players).
     """
     
-    # Convert participants QuerySet to a list for easy iteration
+
     participants = list(battle.participants.all())
 
-    # K-factor: determines how much the rating changes after a game
+
     k_factor = 32  
 
-    # Loop through each participant to update their rating
+
     for player in participants:
-        # Get this player's ranking for the current season
+
         player_rank = Ranking.objects.get(user=player.user, season=battle.season)
 
         # -------------------------------
@@ -109,25 +113,25 @@ def calculate_elo_team(battle):
 
     k_factor = 32  # Controls rating change speed
 
-    # Step 1: Group participants by team
-    teams = {}  # {team_id: [participants]}
+    
+    teams = {}  
     for participant in battle.participants.all():
         teams.setdefault(participant.team_id, []).append(participant)
 
-    # Step 2: Calculate average rating for each team
+    
     team_ratings = {}
     for team_id, members in teams.items():
         total_rating = 0
         for member in members:
             member_rank = Ranking.objects.get(user=member.user, season=battle.season)
             total_rating += member_rank.rating
-        team_ratings[team_id] = total_rating / len(members)  # average rating
+        team_ratings[team_id] = total_rating / len(members)  
 
-    # Step 3: Update ratings for each team
+    
     for team_id, members in teams.items():
         team_rating = team_ratings[team_id]
 
-        # Calculate expected score vs all other teams
+        
         expected = 0
         for opp_team_id, opp_members in teams.items():
             if opp_team_id == team_id:
@@ -135,14 +139,13 @@ def calculate_elo_team(battle):
             opp_rating = team_ratings[opp_team_id]
             expected += 1 / (1 + 10 ** ((opp_rating - team_rating) / 400))
 
-        expected /= (len(teams) - 1)  # Average expectation
+        expected /= (len(teams) - 1) 
 
-        # Actual score (1 = win, 0 = loss, 0.5 = draw)
-        # Here, position=1 means first place
-        team_position = members[0].team_position  # Same for all team members
+       
+        team_position = members[0].team_position  
         actual = (len(teams) - team_position) / (len(teams) - 1)
 
-        # Step 4: Update each member's rating
+        
         for member in members:
             member_rank = Ranking.objects.get(user=member.user, season=battle.season)
             member_rank.rating += k_factor * (actual - expected)
