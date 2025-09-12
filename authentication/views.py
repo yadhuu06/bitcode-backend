@@ -21,7 +21,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from social_django.utils import psa
-
+import logging
 from .models import CustomUser, OTP
 from .serializers import OTPSerializer, RegisterSerializer, UserSerializer
 
@@ -104,7 +104,7 @@ class GenerateOTPView(APIView):
             'expires_in': expiration_time
         }, status=status.HTTP_200_OK)
 
-import logging
+
 
 
 
