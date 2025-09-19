@@ -17,6 +17,7 @@ daphne
 ecdsa==0.19.1
 google-auth>=2.38.0
 idna==3.10
+imagekitio
 oauthlib==3.2.2
 psycopg2-binary==2.9.10
 pyasn1==0.4.8

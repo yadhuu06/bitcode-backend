@@ -24,7 +24,7 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']  
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','backend.bitcode.live','bitcode-backend.onrender.com']  
 
 
 INSTALLED_APPS = [
