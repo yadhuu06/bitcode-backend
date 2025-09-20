@@ -13,8 +13,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 from datetime import timedelta
-from decouple import config
+from decouple import config,Csv
+
 import logging
+from celery.schedules import crontab
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,7 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','backend.bitcode.live','bitcode-backend.onrender.com']  
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
 
 INSTALLED_APPS = [
@@ -50,15 +52,8 @@ INSTALLED_APPS = [
 ]
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    'https://backend.bitcode.live',
-    'https://www.bitcode.live',
-    'https://bitcode.live',
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', cast=Csv())
 
-]
-logger.debug(f"CORS_ALLOWED_ORIGINS: {CORS_ALLOWED_ORIGINS}")
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -163,19 +158,6 @@ ROOT_URLCONF = 'bitWar_backend.urls'
 WSGI_APPLICATION = 'bitWar_backend.wsgi.application'
 ASGI_APPLICATION = 'bitWar_backend.asgi.application'
 
-
-
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
-    },
-}
-
-
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 DATABASES = {
@@ -188,6 +170,29 @@ DATABASES = {
         'PORT': config('DB_PORT'),
     }
 }
+
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [config("REDIS_URL")],
+        },
+    },
+}
+# Redis Configuration
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": config('REDIS_URL'),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            
+        }
+    }
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -226,12 +231,12 @@ IMAGEKIT_PUBLIC_KEY = config('IMAGEKIT_PUBLIC_KEY')
 IMAGEKIT_PRIVATE_KEY = config('IMAGEKIT_PRIVATE_KEY')
 IMAGEKIT_URL_ENDPOINT = config('IMAGEKIT_URL_ENDPOINT')
 
-
-# CELERY CONFIGURATIONS FOR DATABASE CLEAN UP
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
+#  ------------------------------------------- Not in use For Production for Reducing Server Load ------------------------------------------------
+# # CELERY CONFIGURATIONS FOR DATABASE CLEAN UP
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'
+# CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
 
 # THE LANGUAGES AND ITS IDS FOR JUDGE0 CODE EXICUTION
 LANGUAGE_MAP = {
@@ -247,20 +252,11 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'bitcodeofficial01@gmail.com'
-EMAIL_HOST_PASSWORD = 'czma pmyz vitx szda'  
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD =config('EMAIL_HOST_PASSWORD')  
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-# Redis Configuration
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
+
 
 # Templates
 TEMPLATES = [
@@ -279,19 +275,21 @@ TEMPLATES = [
         },
     },
 ]
-from celery.schedules import crontab
 
-CELERY_BEAT_SCHEDULE = {
-    'cleanup-inactive-rooms-every-10-mins': {
-        'task': 'battle.tasks.cleanup_inactive_rooms',  
-        'schedule': crontab(minute='*/10'),  # Every 10 minutes
-    },
-    'create-new-season-every-30-days': {
-        'task': 'ranking.tasks.check_and_create_new_season',
-        'schedule': crontab(hour=0, minute=0, day_of_month='1'),  
+
+#  NOT IN USE For Production for Reducing Server Load ------------------------------------------------>
+
+# CELERY_BEAT_SCHEDULE = {
+#     'cleanup-inactive-rooms-every-10-mins': {
+#         'task': 'battle.tasks.cleanup_inactive_rooms',  
+#         'schedule': crontab(minute='*/10'),  
+#     },
+#     'create-new-season-every-30-days': {
+#         'task': 'ranking.tasks.check_and_create_new_season',
+#         'schedule': crontab(hour=0, minute=0, day_of_month='1'),  
         
-    },
-}
+#     },
+# }
 
 
 # Security Settings (for production)
