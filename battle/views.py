@@ -101,7 +101,7 @@ class QuestionVerifyAPIView(APIView):
                 if elapsed_minutes > room.time_limit:
                     room.status = 'completed'
                     room.save()
-                    cleanup_room_data.apply_async((room.room_id,), countdown=5 * 60)
+                    # cleanup_room_data.apply_async((room.room_id,), countdown=5 * 60) Not using for reducing server load
                     channel_layer = get_channel_layer()
                     async_to_sync(channel_layer.group_send)(
                         f"battle_{room_id}",
@@ -165,7 +165,7 @@ class QuestionVerifyAPIView(APIView):
                 if len(existing_results) + 1 >= max_winners:
                     room.status = 'completed'
                     room.save()
-                    cleanup_room_data.apply_async((room.room_id,), countdown=5 * 60)
+                    # cleanup_room_data.apply_async((room.room_id,), countdown=5 * 60) Not using for reducing server load
                     channel_layer = get_channel_layer()
                     async_to_sync(channel_layer.group_send)(
                         f"battle_{room_id}",
