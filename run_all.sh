@@ -4,14 +4,25 @@
 source venv/bin/activate
 
 # Start Redis server in background (if not already running)
-redis-server --daemonize yes
+if ! pgrep -x "redis-server" > /dev/null
+then
+    redis-server --daemonize yes
+    echo "Redis started"
+else
+    echo "Redis already running"
+fi
 
 # Start Django ASGI server using Daphne
-daphne -p 8000 bitWar_backend.asgi:application &
+if ! pgrep -f "daphne.*bitWar_backend.asgi:application" > /dev/null
+then
+    daphne -p 8000 bitWar_backend.asgi:application &
+    echo "Daphne started"
+else
+    echo "Daphne already running"
+fi
 
-# Start Celery worker
-celery -A bitWar_backend worker --loglevel=info &
 
-# Start Celery beat
-celery -A bitWar_backend beat --loglevel=info &
+
+
+
 
