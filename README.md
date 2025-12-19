@@ -63,10 +63,23 @@ BitCode enables real-time, head-to-head coding battles with features such as:
 
 ---
 
-##  4. Getting Started
+## 4. Architecture & Testing
+
+### Service Layer Pattern
+We follow a **Service Layer** pattern to keep our views thin and business logic testable.
+- **Views (`views.py`)**: Handle HTTP requests/responses and permissions.
+- **Services (`services/`)**: Contain core business logic (e.g., `BattleService`).
+
+### Testing
+- **Unit Tests**: Located in `app_name/tests/`.
+- **Running Tests**: `python manage.py test`
+
+---
+
+## 5. Getting Started
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.11+
 - Django 4.x
 - PostgreSQL
 - Redis
@@ -79,6 +92,9 @@ BitCode enables real-time, head-to-head coding battles with features such as:
 Create a `.env` file with the following variables:
 
 ```dotenv
+# General Settings
+DEBUG=True
+
 # API Endpoints
 DJANGO_SECRET_KEY=your-secret-key
 DATABASE_URL=postgres://bit:bitc@localhost:5432/bitcodedb
